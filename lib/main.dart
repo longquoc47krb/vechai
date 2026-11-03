@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 import 'app.dart';
+import 'data/local/app_database.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +13,15 @@ Future<void> main() async {
   await initializeDateFormatting('vi');
   Intl.defaultLocale = 'vi';
 
+  // Mở SQLite một lần khi khởi động; lần đầu sẽ tạo bảng + mặt hàng mẫu.
+  final database = await AppDatabase.open();
+
   // ProviderScope là "kho chứa" mọi provider của Riverpod, phải bọc ngoài cùng.
-  runApp(const ProviderScope(child: VeChaiApp()));
+  // overrideWithValue đưa database đã mở vào để các repository dùng chung.
+  runApp(
+    ProviderScope(
+      overrides: [appDatabaseProvider.overrideWithValue(database)],
+      child: const VeChaiApp(),
+    ),
+  );
 }

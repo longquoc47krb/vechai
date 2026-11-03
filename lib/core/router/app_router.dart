@@ -5,7 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../features/expenses/expenses_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/inventory/inventory_screen.dart';
+import '../../features/inventory/product_history_screen.dart';
+import '../../features/products/product_form_screen.dart';
 import '../../features/products/products_screen.dart';
+import '../../features/purchases/purchase_detail_screen.dart';
+import '../../features/purchases/purchase_form_screen.dart';
 import '../../features/purchases/purchases_screen.dart';
 import '../../features/reports/reports_screen.dart';
 import '../../features/sales/sales_screen.dart';
@@ -24,7 +28,14 @@ class Routes {
   static const reports = '/reports';
 
   // Màn hình phụ (mở đè lên, không có thanh tab)
+  static const purchaseNew = '/purchases/new';
+  static String purchaseDetail(String id) => '/purchases/$id';
+  static String purchaseEdit(String id) => '/purchases/$id/edit';
+  static String productHistory(String productId) => '/inventory/$productId';
+
   static const products = '/products';
+  static const productNew = '/products/new';
+  static String productEdit(String id) => '/products/$id';
   static const expenses = '/expenses';
   static const settings = '/settings';
 }
@@ -41,30 +52,81 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state, navigationShell) =>
             MainShell(navigationShell: navigationShell),
         branches: [
-          _branch(Routes.home, const HomeScreen()),
-          _branch(Routes.purchases, const PurchasesScreen()),
-          _branch(Routes.sales, const SalesScreen()),
-          _branch(Routes.inventory, const InventoryScreen()),
-          _branch(Routes.reports, const ReportsScreen()),
+          _branch(Routes.home, (_) => const HomeScreen()),
+          _branch(
+            Routes.purchases,
+            (_) => const PurchasesScreen(),
+            // 'new' khai báo trước ':id' để không bị hiểu nhầm là id = "new".
+            [
+              _page('new', (_) => const PurchaseFormScreen()),
+              _page(
+                ':id',
+                (s) => PurchaseDetailScreen(purchaseId: s.pathParameters['id']!),
+                [
+                  _page(
+                    'edit',
+                    (s) =>
+                        PurchaseFormScreen(purchaseId: s.pathParameters['id']),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          _branch(Routes.sales, (_) => const SalesScreen()),
+          _branch(Routes.inventory, (_) => const InventoryScreen(), [
+            _page(
+              ':productId',
+              (s) => ProductHistoryScreen(
+                productId: s.pathParameters['productId']!,
+                productName: s.extra as String?,
+              ),
+            ),
+          ]),
+          _branch(Routes.reports, (_) => const ReportsScreen()),
         ],
       ),
-      _fullScreen(Routes.products, const ProductsScreen()),
-      _fullScreen(Routes.expenses, const ExpensesScreen()),
-      _fullScreen(Routes.settings, const SettingsScreen()),
+      _page(Routes.products, (_) => const ProductsScreen(), [
+        _page('new', (_) => const ProductFormScreen()),
+        _page(
+          ':id',
+          (s) => ProductFormScreen(productId: s.pathParameters['id']),
+        ),
+      ]),
+      _page(Routes.expenses, (_) => const ExpensesScreen()),
+      _page(Routes.settings, (_) => const SettingsScreen()),
     ],
   );
 });
 
-StatefulShellBranch _branch(String path, Widget screen) {
+typedef _Builder = Widget Function(GoRouterState state);
+
+/// Màn gốc của một tab.
+StatefulShellBranch _branch(
+  String path,
+  _Builder builder, [
+  List<RouteBase> routes = const [],
+]) {
   return StatefulShellBranch(
-    routes: [GoRoute(path: path, builder: (context, state) => screen)],
+    routes: [
+      GoRoute(
+        path: path,
+        builder: (context, state) => builder(state),
+        routes: routes,
+      ),
+    ],
   );
 }
 
-GoRoute _fullScreen(String path, Widget screen) {
+/// Màn phụ: mở trên navigator gốc nên che luôn thanh tab.
+GoRoute _page(
+  String path,
+  _Builder builder, [
+  List<RouteBase> routes = const [],
+]) {
   return GoRoute(
     path: path,
     parentNavigatorKey: _rootNavigatorKey,
-    builder: (context, state) => screen,
+    builder: (context, state) => builder(state),
+    routes: routes,
   );
 }
