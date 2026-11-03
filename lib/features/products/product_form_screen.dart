@@ -9,15 +9,23 @@ import '../../domain/product.dart';
 import 'products_providers.dart';
 
 /// Màn thêm mới ([productId] == null) hoặc sửa mặt hàng.
+///
+/// Khi lưu xong, màn này đóng và trả về [Product] vừa lưu:
+/// `final p = await context.push<Product>(Routes.productNew);`
 class ProductFormScreen extends ConsumerWidget {
-  const ProductFormScreen({super.key, this.productId});
+  const ProductFormScreen({super.key, this.productId, this.initialName});
 
   final String? productId;
+
+  /// Tên điền sẵn khi thêm mới (ví dụ từ ô tìm kiếm lúc tạo phiếu).
+  final String? initialName;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final id = productId;
-    if (id == null) return const _ProductForm(product: null);
+    if (id == null) {
+      return _ProductForm(product: null, initialName: initialName);
+    }
 
     final async = ref.watch(productByIdProvider(id));
     return async.when(
@@ -39,9 +47,10 @@ class ProductFormScreen extends ConsumerWidget {
 }
 
 class _ProductForm extends ConsumerStatefulWidget {
-  const _ProductForm({required this.product});
+  const _ProductForm({required this.product, this.initialName});
 
   final Product? product;
+  final String? initialName;
 
   @override
   ConsumerState<_ProductForm> createState() => _ProductFormState();
@@ -63,7 +72,9 @@ class _ProductFormState extends ConsumerState<_ProductForm> {
   void initState() {
     super.initState();
     final p = widget.product;
-    _name = TextEditingController(text: p?.name ?? '');
+    _name = TextEditingController(
+      text: p?.name ?? widget.initialName?.trim() ?? '',
+    );
     _buyPrice = TextEditingController(
       text: p == null ? '' : formatMoneyInput(p.defaultPurchasePrice),
     );
@@ -99,18 +110,24 @@ class _ProductFormState extends ConsumerState<_ProductForm> {
 
     try {
       final repo = ref.read(productRepositoryProvider);
+      final Product saved;
       if (_isEdit) {
-        await repo.update(widget.product!.id, input);
-        ref.invalidate(productByIdProvider(widget.product!.id));
+        saved = await repo.update(widget.product!.id, input);
+        ref.invalidate(productByIdProvider(saved.id));
       } else {
-        await repo.create(input);
+        saved = await repo.create(input);
       }
       ref.invalidate(productsProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isEdit ? 'Đã lưu thay đổi' : 'Đã thêm mặt hàng')),
+        SnackBar(
+          content: Text(
+            _isEdit ? 'Đã lưu thay đổi' : 'Đã thêm mặt hàng ${saved.name}',
+          ),
+        ),
       );
-      context.pop();
+      // Trả mặt hàng về cho màn gọi (ví dụ bảng chọn mặt hàng khi thu mua).
+      context.pop(saved);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);

@@ -106,10 +106,10 @@ void main() {
 
     final hidden = groupPurchasesByDay(list);
     expect(hidden, hasLength(2));
-    expect(hidden.first.purchases.map((p) => p.id), ['a']);
+    expect(hidden.first.items.map((p) => p.id), ['a']);
 
     final shown = groupPurchasesByDay(list, showCancelled: true);
-    expect(shown.first.purchases, hasLength(2));
+    expect(shown.first.items, hasLength(2));
     expect(shown.first.activeTotal, 100);
     expect(shown.last.day, DateTime(2026, 11, 2));
   });

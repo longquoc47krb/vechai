@@ -15,6 +15,33 @@ final productByIdProvider = FutureProvider.family<Product?, String>(
   (ref, id) => ref.watch(productRepositoryProvider).getById(id),
 );
 
+/// Gợi ý mặt hàng khi gõ (không dấu, không phân biệt hoa thường).
+/// Mặt hàng có tên BẮT ĐẦU bằng từ khóa xếp trước, rồi tới tên CHỨA từ khóa.
+List<Product> suggestProducts(
+  List<Product> products,
+  String query, {
+  int limit = 6,
+}) {
+  final q = normalizeForSearch(query);
+  final starts = <Product>[];
+  final contains = <Product>[];
+  for (final p in products) {
+    final name = normalizeForSearch(p.name);
+    if (q.isEmpty || name.startsWith(q)) {
+      starts.add(p);
+    } else if (name.contains(q)) {
+      contains.add(p);
+    }
+  }
+  return [...starts, ...contains].take(limit).toList();
+}
+
+/// true nếu đã có mặt hàng trùng tên với [query] (bỏ dấu, hoa thường).
+bool hasExactProduct(List<Product> products, String query) {
+  final q = normalizeForSearch(query);
+  return products.any((p) => normalizeForSearch(p.name) == q);
+}
+
 /// Lọc danh sách theo từ khóa (không dấu), nhóm hàng và trạng thái.
 List<Product> filterProducts(
   List<Product> products, {

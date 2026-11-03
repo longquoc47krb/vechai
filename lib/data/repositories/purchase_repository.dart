@@ -3,8 +3,10 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/errors.dart';
+import '../../core/utils/text_utils.dart';
 import '../../domain/purchase.dart';
 import '../local/app_database.dart';
+import '../local/document_code.dart';
 import '../local/sync_queue.dart';
 
 class PurchaseRepository {
@@ -130,8 +132,8 @@ class PurchaseRepository {
 
   Map<String, Object?> _headerRow(PurchaseInput input) => {
     'purchase_date': toDbDate(input.purchaseDate),
-    'seller_name': _blankToNull(input.sellerName),
-    'note': _blankToNull(input.note),
+    'seller_name': blankToNull(input.sellerName),
+    'note': blankToNull(input.note),
     'total_amount': input.totalAmount,
   };
 
@@ -159,25 +161,10 @@ class PurchaseRepository {
   }
 
   /// Mã phiếu theo ngày thu mua: TM-yyyyMMdd-001, 002...
-  Future<String> _nextCode(Transaction txn, DateTime date) async {
-    final day = toDbDate(date).substring(0, 10).replaceAll('-', '');
-    final prefix = 'TM-$day-';
-    final rows = await txn.rawQuery(
-      'SELECT MAX(code) AS max_code FROM purchases WHERE code LIKE ?',
-      ['$prefix%'],
-    );
-    final maxCode = rows.first['max_code'] as String?;
-    final next = maxCode == null
-        ? 1
-        : int.parse(maxCode.substring(prefix.length)) + 1;
-    return '$prefix${next.toString().padLeft(3, '0')}';
-  }
-
-  String? _blankToNull(String? s) {
-    final trimmed = s?.trim();
-    return (trimmed == null || trimmed.isEmpty) ? null : trimmed;
-  }
+  Future<String> _nextCode(Transaction txn, DateTime date) =>
+      nextDocumentCode(txn, table: 'purchases', prefix: 'TM', date: date);
 }
+
 
 final purchaseRepositoryProvider = Provider<PurchaseRepository>(
   (ref) => PurchaseRepository(ref.watch(appDatabaseProvider)),

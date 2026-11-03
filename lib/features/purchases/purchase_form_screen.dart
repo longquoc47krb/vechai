@@ -13,6 +13,7 @@ import '../../domain/purchase.dart';
 import '../products/products_providers.dart';
 import 'purchase_item_sheet.dart';
 import 'purchases_providers.dart';
+import 'receipt_scan_flow.dart';
 
 /// Màn tạo phiếu mới ([purchaseId] == null) hoặc sửa phiếu.
 class PurchaseFormScreen extends ConsumerWidget {
@@ -172,6 +173,38 @@ class _PurchaseFormState extends ConsumerState<_PurchaseForm> {
       );
   }
 
+  /// Chụp ảnh phiếu viết tay -> AI đọc -> người dùng xem lại -> thêm dòng.
+  Future<void> _scanReceipt() async {
+    final result = await scanReceipt(
+      context,
+      ref,
+      products: widget.allProducts,
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _items.addAll(result.items);
+      final date = result.date;
+      if (date != null) {
+        // Giữ giờ phút hiện tại, lấy ngày trên phiếu.
+        _date = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          _date.hour,
+          _date.minute,
+        );
+      }
+      final seller = result.sellerName;
+      if (seller != null && _seller.text.trim().isEmpty) _seller.text = seller;
+      _dirty = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã thêm ${result.items.length} dòng từ ảnh phiếu'),
+      ),
+    );
+  }
+
   Future<void> _save() async {
     if (_saving) return;
     final error = _input.validate();
@@ -265,7 +298,7 @@ class _PurchaseFormState extends ConsumerState<_PurchaseForm> {
               controller: _note,
               maxLength: 500,
               decoration: const InputDecoration(
-                labelText: 'Địa chỉ / ghi chú (không bắt buộc)',
+                labelText: 'Ghi chú (không bắt buộc)',
                 prefixIcon: Icon(Icons.notes),
                 counterText: '',
               ),
@@ -296,10 +329,34 @@ class _PurchaseFormState extends ConsumerState<_PurchaseForm> {
               ),
               const SizedBox(height: 8),
             ],
-            OutlinedButton.icon(
-              onPressed: _saving ? null : () => _addOrEditItem(),
-              icon: const Icon(Icons.add),
-              label: const Text('Thêm mặt hàng'),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _saving ? null : () => _addOrEditItem(),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Thêm mặt hàng'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(64, 52),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: _saving ? null : _scanReceipt,
+                    icon: const Icon(Icons.document_scanner_outlined),
+                    label: const Text('Chụp phiếu'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

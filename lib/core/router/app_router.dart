@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/expenses/expenses_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/inventory/inventory_screen.dart';
 import '../../features/inventory/product_history_screen.dart';
@@ -12,6 +11,8 @@ import '../../features/purchases/purchase_detail_screen.dart';
 import '../../features/purchases/purchase_form_screen.dart';
 import '../../features/purchases/purchases_screen.dart';
 import '../../features/reports/reports_screen.dart';
+import '../../features/sales/sale_detail_screen.dart';
+import '../../features/sales/sale_form_screen.dart';
 import '../../features/sales/sales_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/main_shell.dart';
@@ -31,12 +32,14 @@ class Routes {
   static const purchaseNew = '/purchases/new';
   static String purchaseDetail(String id) => '/purchases/$id';
   static String purchaseEdit(String id) => '/purchases/$id/edit';
+  static const saleNew = '/sales/new';
+  static String saleDetail(String id) => '/sales/$id';
+  static String saleEdit(String id) => '/sales/$id/edit';
   static String productHistory(String productId) => '/inventory/$productId';
 
   static const products = '/products';
   static const productNew = '/products/new';
   static String productEdit(String id) => '/products/$id';
-  static const expenses = '/expenses';
   static const settings = '/settings';
 }
 
@@ -72,7 +75,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          _branch(Routes.sales, (_) => const SalesScreen()),
+          _branch(Routes.sales, (_) => const SalesScreen(), [
+            _page('new', (_) => const SaleFormScreen()),
+            _page(
+              ':id',
+              (s) => SaleDetailScreen(saleId: s.pathParameters['id']!),
+              [
+                _page(
+                  'edit',
+                  (s) => SaleFormScreen(saleId: s.pathParameters['id']),
+                ),
+              ],
+            ),
+          ]),
           _branch(Routes.inventory, (_) => const InventoryScreen(), [
             _page(
               ':productId',
@@ -86,13 +101,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       _page(Routes.products, (_) => const ProductsScreen(), [
-        _page('new', (_) => const ProductFormScreen()),
+        _page(
+          'new',
+          (s) => ProductFormScreen(initialName: s.extra as String?),
+        ),
         _page(
           ':id',
           (s) => ProductFormScreen(productId: s.pathParameters['id']),
         ),
       ]),
-      _page(Routes.expenses, (_) => const ExpensesScreen()),
       _page(Routes.settings, (_) => const SettingsScreen()),
     ],
   );

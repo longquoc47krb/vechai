@@ -15,3 +15,9 @@ String normalizeForSearch(String input) {
   }
   return buffer.toString();
 }
+
+/// Chuỗi rỗng / toàn khoảng trắng -> null, còn lại cắt khoảng trắng 2 đầu.
+String? blankToNull(String? s) {
+  final trimmed = s?.trim();
+  return (trimmed == null || trimmed.isEmpty) ? null : trimmed;
+}

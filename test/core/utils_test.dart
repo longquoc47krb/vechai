@@ -49,6 +49,33 @@ void main() {
     });
   });
 
+  group('suggestProducts', () {
+    final list = [
+      _p('Nhôm', 'Kim loại'),
+      _p('Sắt', 'Kim loại'),
+      _p('Sắt vụn', 'Kim loại'),
+      _p('Inox', 'Kim loại'),
+      _p('Nhựa', 'Nhựa'),
+    ];
+    List<String> names(List<Product> l) => l.map((p) => p.name).toList();
+
+    test('gõ không dấu, tên bắt đầu bằng từ khóa xếp trước', () {
+      expect(names(suggestProducts(list, 'sat')), ['Sắt', 'Sắt vụn']);
+      expect(names(suggestProducts(list, 'nh')), ['Nhôm', 'Nhựa']);
+      // "o" nằm giữa tên: Nhôm, Inox
+      expect(names(suggestProducts(list, 'o')), ['Nhôm', 'Inox']);
+    });
+
+    test('ô trống -> gợi ý tối đa [limit] mặt hàng', () {
+      expect(suggestProducts(list, '', limit: 3), hasLength(3));
+    });
+
+    test('hasExactProduct', () {
+      expect(hasExactProduct(list, 'sat'), isTrue);
+      expect(hasExactProduct(list, 'sat v'), isFalse);
+    });
+  });
+
   group('filterProducts', () {
     final list = [
       _p('Sắt', 'Kim loại'),

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/errors.dart';
 import '../../core/router/app_router.dart';
+import '../../core/widgets/day_header.dart';
 import '../../core/utils/formatters.dart';
 import '../../domain/purchase.dart';
 import 'purchases_providers.dart';
@@ -62,8 +63,8 @@ class _PurchasesScreenState extends ConsumerState<PurchasesScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             children: [
               for (final g in groups) ...[
-                _DayHeader(group: g),
-                for (final p in g.purchases) ...[
+                DayHeader(group: g),
+                for (final p in g.items) ...[
                   _PurchaseTile(purchase: p),
                   const SizedBox(height: 8),
                 ],
@@ -76,36 +77,6 @@ class _PurchasesScreenState extends ConsumerState<PurchasesScreen> {
   }
 }
 
-class _DayHeader extends StatelessWidget {
-  const _DayHeader({required this.group});
-
-  final PurchaseDayGroup group;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final weekday = DateFormat('EEEE', 'vi').format(group.day);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
-      child: Row(
-        children: [
-          Text(
-            '${weekday[0].toUpperCase()}${weekday.substring(1)}, '
-            '${formatDate(group.day)}',
-            style: theme.textTheme.titleSmall,
-          ),
-          const Spacer(),
-          Text(
-            formatVnd(group.activeTotal),
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.primary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _PurchaseTile extends StatelessWidget {
   const _PurchaseTile({required this.purchase});

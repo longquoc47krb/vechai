@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/utils/formatters.dart';
+import '../../domain/report.dart';
+import '../reports/reports_providers.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // TODO(GĐ6): thay số 0 bằng số liệu thật từ ReportRepository.
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Đang tải / lỗi thì tạm hiện 0, không chặn cả trang chủ.
+    final t = ref.watch(todayTotalsProvider).value ?? ReportTotals.zero;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ve Chai Manager'),
@@ -23,13 +27,6 @@ class HomeScreen extends StatelessWidget {
                 child: ListTile(
                   leading: Icon(Icons.category_outlined),
                   title: Text('Mặt hàng'),
-                ),
-              ),
-              PopupMenuItem(
-                value: Routes.expenses,
-                child: ListTile(
-                  leading: Icon(Icons.receipt_long_outlined),
-                  title: Text('Chi phí'),
                 ),
               ),
               PopupMenuItem(
@@ -51,24 +48,32 @@ class HomeScreen extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 12),
-          const _StatGrid(
+          _StatGrid(
             children: [
-              _StatCard(label: 'Tiền thu mua', value: 0, icon: Icons.south_west),
-              _StatCard(label: 'Tiền bán', value: 0, icon: Icons.north_east),
+              _StatCard(
+                label: 'Tiền thu mua',
+                value: t.purchaseTotal,
+                icon: Icons.south_west,
+              ),
+              _StatCard(
+                label: 'Tiền bán',
+                value: t.saleTotal,
+                icon: Icons.north_east,
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          const _StatCard(
+          _StatCard(
             label: 'Lợi nhuận hôm nay',
-            value: 0,
+            value: t.profit,
             icon: Icons.savings_outlined,
             highlight: true,
           ),
           const SizedBox(height: 12),
-          const _StatGrid(
+          _StatGrid(
             children: [
-              _CountCard(label: 'Phiếu thu mua', count: 0),
-              _CountCard(label: 'Phiếu bán', count: 0),
+              _CountCard(label: 'Phiếu thu mua', count: t.purchaseCount),
+              _CountCard(label: 'Phiếu bán', count: t.saleCount),
             ],
           ),
           const SizedBox(height: 12),

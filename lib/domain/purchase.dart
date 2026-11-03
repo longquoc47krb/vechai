@@ -1,12 +1,6 @@
-/// Trạng thái phiếu (dùng chung cho thu mua, bán, chi phí).
-/// Phiếu không bao giờ bị xóa, chỉ chuyển sang [cancelled].
-enum RecordStatus {
-  active,
-  cancelled;
+import 'record_status.dart';
 
-  static RecordStatus parse(String value) =>
-      value == 'cancelled' ? cancelled : active;
-}
+export 'record_status.dart';
 
 /// Thành tiền = Số lượng × Đơn giá, làm tròn tới đồng.
 int calcLineAmount(double quantity, int unitPrice) =>
